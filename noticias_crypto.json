@@ -1,0 +1,420 @@
+{
+  "name": "noticias_crypto",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "473aebf9-3389-4811-b30e-4c076f840dc5",
+      "name": "Todos os dias 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/coins/markets",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "vs_currency",
+              "value": "usd"
+            },
+            {
+              "name": "ids",
+              "value": "bitcoin,ethereum,solana"
+            },
+            {
+              "name": "order",
+              "value": "market_cap_desc"
+            },
+            {
+              "name": "per_page",
+              "value": "3"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "sparkline",
+              "value": "false"
+            },
+            {
+              "name": "price_change_percentage",
+              "value": "24h,7d"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "12b63d20-1c1c-4101-9c2d-6a3ea6e97f16",
+      "name": "CoinGecko - BTC ETH SOL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/coins/markets",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "vs_currency",
+              "value": "usd"
+            },
+            {
+              "name": "order",
+              "value": "volume_desc"
+            },
+            {
+              "name": "per_page",
+              "value": "20"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "sparkline",
+              "value": "false"
+            },
+            {
+              "name": "price_change_percentage",
+              "value": "24h,7d"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "093348f4-e701-4fe9-a35d-52547455884b",
+      "name": "CoinGecko - Top 20 por Volume",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.alternative.me/fng/?limit=1",
+        "options": {}
+      },
+      "id": "ad449e9a-f4ac-48da-b966-b093ce5afcd1",
+      "name": "Fear and Greed Index",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://cointelegraph.com/rss",
+        "options": {}
+      },
+      "id": "fc323942-63a5-4467-bce0-e87f29d52206",
+      "name": "RSS - CoinTelegraph",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        0,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.feedburner.com/CoinDesk",
+        "options": {}
+      },
+      "id": "8fa32c1a-1ba1-4c8e-8366-d3b7ffa9a92c",
+      "name": "RSS - CoinDesk",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        0,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://decrypt.co/feed",
+        "options": {}
+      },
+      "id": "8f353b5c-6090-4820-a310-720535e89927",
+      "name": "RSS - Decrypt",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        0,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Busca dados com tratamento de erro\nlet mainCoins = [];\nlet top20 = [];\nlet fearGreed = { data: [{ value: 'N/A', value_classification: 'N/A' }] };\nlet rssCT = [];\nlet rssCD = [];\nlet rssDecrypt = [];\nlet rssInvesting = [];\n\ntry { mainCoins = $('CoinGecko - BTC ETH SOL').all().map(i => i.json); } catch(e) {}\ntry { top20 = $('CoinGecko - Top 20 por Volume').all().map(i => i.json); } catch(e) {}\ntry { fearGreed = $('Fear and Greed Index').first().json; } catch(e) {}\ntry { rssCT = $('RSS - CoinTelegraph').all().map(i => i.json); } catch(e) {}\ntry { rssCD = $('RSS - CoinDesk').all().map(i => i.json); } catch(e) {}\ntry { rssDecrypt = $('RSS - Decrypt').all().map(i => i.json); } catch(e) {}\ntry { rssInvesting = $('RSS - Investing').all().map(i => i.json); } catch(e) {}\n\n// Junta todas as notícias e pega as 10 mais recentes\nconst allNews = [...rssCT, ...rssCD, ...rssDecrypt, ...rssInvesting]\n  .sort((a, b) => new Date(b.pubDate || b.isoDate) - new Date(a.pubDate || a.isoDate))\n  .slice(0, 11)\n  .map(n => ({ title: n.title, summary: n.contentSnippet || n.summary || '', source: n.link, date: n.pubDate || n.isoDate }));\n\n// Filtra altcoins excluindo BTC/ETH/SOL\nconst altcoins = top20\n  .filter(c => !['bitcoin','ethereum','solana'].includes(c.id))\n  .slice(0, 5)\n  .map(c => ({\n    name: c.name,\n    symbol: c.symbol.toUpperCase(),\n    price: c.current_price,\n    change24h: c.price_change_percentage_24h?.toFixed(2),\n    change7d: c.price_change_percentage_7d_in_currency?.toFixed(2),\n    marketCap: c.market_cap,\n    volume24h: c.total_volume\n  }));\n\n// Formata principais moedas\nconst mainFormatted = mainCoins.map(c => ({\n  name: c.name,\n  symbol: c.symbol.toUpperCase(),\n  price: c.current_price,\n  change24h: c.price_change_percentage_24h?.toFixed(2),\n  change7d: c.price_change_percentage_7d_in_currency?.toFixed(2),\n  marketCap: c.market_cap,\n  volume24h: c.total_volume,\n  high24h: c.high_24h,\n  low24h: c.low_24h\n}));\n\nconst fgData = fearGreed.data?.[0];\n\nreturn [{\n  json: {\n    mainCoins: mainFormatted,\n    altcoins,\n    fearGreed: {\n      value: fgData?.value,\n      classification: fgData?.value_classification\n    },\n    news: allNews,\n    generatedAt: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "51af3b0d-9a14-49fb-8c61-2939c09f2b15",
+      "name": "Agrega Todos os Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        336
+      ],
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "ee453116-c203-4c91-b7ec-be2a1e3e23eb",
+      "name": "Groq - Analisa e Gera Relatório",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        352
+      ],
+      "executeOnce": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "B4G54rgBxlts96XQ",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const groqResponse = $input.first().json;\nconst analysisText = groqResponse.choices?.[0]?.message?.content || 'Erro ao gerar análise.';\n\nconst now = new Date();\nconst dateStr = now.toLocaleDateString('pt-BR', { \n  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' \n});\n\nconst cleanText = analysisText\n  .replace(/#{1,6}\\s/g, '')\n  .replace(/\\*\\*(.*?)\\*\\*/g, '*$1*')\n  .replace(/__(.*?)__/g, '_$1_')\n  .replace(/\\n{3,}/g, '\\n\\n');\n\nconst header = `📊 *CRYPTO MORNING REPORT*\\n_${dateStr}_\\n\\n`;\nconst footer = `\\n\\n─────────────────────\\n_Não é recomendação de investimento_`;\nconst fullMessage = header + cleanText + footer;\n\n// Divide em 3 partes nos separadores ━━━\nconst sections = fullMessage.split('━━━━━━━━━━━━━━━━━━━━━━');\n\nconst part1 = sections.slice(0, 3).join('━━━━━━━━━━━━━━━━━━━━━━');\nconst part2 = sections.slice(3, 5).join('━━━━━━━━━━━━━━━━━━━━━━');\nconst part3 = (sections.slice(5).join('━━━━━━━━━━━━━━━━━━━━━━') || '') + footer;\n\nreturn [\n  { json: { message: part1 } },\n  { json: { message: part2 } },\n  { json: { message: part3 } }\n];"
+      },
+      "id": "6d5fecf9-4747-4a42-9996-5e6d08fde358",
+      "name": "Formata Mensagem Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        32
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=site:investing.com+crypto&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+        "options": {}
+      },
+      "id": "072ea140-4dcf-48d8-94f5-bee6d187770d",
+      "name": "RSS - Investing",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        0,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nconst prompt = `Você é um analista sênior de criptoativos. Gere um relatório matinal COMPLETO e DETALHADO em português brasileiro com base nos dados abaixo.\n\nO relatório deve seguir exatamente esta estrutura:\n\n━━━━━━━━━━━━━━━━━━━━━━\n🌡️ *SENTIMENTO GERAL*\n━━━━━━━━━━━━━━━━━━━━━━\n- Classificação: Bullish / Bearish / Neutro\n- Fear & Greed Index: ${data.fearGreed.value} (${data.fearGreed.classification})\n- Análise do sentimento em 3-4 frases explicando o cenário atual\n\n━━━━━━━━━━━━━━━━━━━━━━\n📊 *ANÁLISE DOS PRINCIPAIS ATIVOS*\n━━━━━━━━━━━━━━━━━━━━━━\nPara cada ativo BTC, ETH e SOL, informe:\n- Preço atual em USD\n- Variação 24h e 7d\n- Máxima e mínima das últimas 24h\n- Volume de negociação\n- Expectativa para as próximas 24-72h\n- Nível de risco: 🟢 Baixo / 🟡 Médio / 🔴 Alto\n- 2-3 fatores que estão influenciando o preço\n\n━━━━━━━━━━━━━━━━━━━━━━\n🚀 *ALTCOINS COM POTENCIAL*\n━━━━━━━━━━━━━━━━━━━━━━\nCom base nos dados de volume e variação, destaque 3 altcoins com maior potencial hoje. Para cada uma:\n- Nome, símbolo e preço\n- Variação 24h e 7d\n- Por que tem potencial hoje\n- Nível de risco\n\n━━━━━━━━━━━━━━━━━━━━━━\n📰 *PRINCIPAIS NOTÍCIAS*\n━━━━━━━━━━━━━━━━━━━━━━\nAnalise as notícias e destaque as 5 mais relevantes. Para cada uma:\n- Título resumido\n- Impacto esperado no mercado (positivo/negativo/neutro)\n- Quais ativos são afetados\n\n━━━━━━━━━━━━━━━━━━━━━━\n⚠️ *RISCOS DO DIA*\n━━━━━━━━━━━━━━━━━━━━━━\nListe 3-4 riscos concretos para hoje: macro, regulatórios, técnicos\n\n━━━━━━━━━━━━━━━━━━━━━━\n🎯 *RESUMO EXECUTIVO*\n━━━━━━━━━━━━━━━━━━━━━━\n3 pontos-chave objetivos para o investidor acompanhar hoje\n\n---\nDADOS DE MERCADO:\n${JSON.stringify(data.mainCoins)}\n\nALTCOINS TOP 20 POR VOLUME:\n${JSON.stringify(data.altcoins)}\n\nFEAR & GREED: ${data.fearGreed.value} - ${data.fearGreed.classification}\n\nNOTÍCIAS RECENTES:\n${JSON.stringify(data.news)}`;\n\nconst body = {\n  model: \"llama-3.3-70b-versatile\",\n  max_tokens: 4000,\n  messages: [\n    {\n      role: \"system\",\n      content: \"Você é um analista sênior de criptoativos. Responda em português brasileiro. Use formatação markdown compatível com Telegram: *negrito* e _itálico_. Nunca use ### ou ** para headers, use apenas *texto* para negrito.\"\n    },\n    {\n      role: \"user\",\n      content: prompt\n    }\n  ]\n};\n\nreturn [{ json: { body: body } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        16
+      ],
+      "id": "8c039bf4-eddc-41b5-9e52-480739624442",
+      "name": "Code",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "chatId": "5856200710",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        352
+      ],
+      "id": "f951259d-3512-47d0-b3d8-8032d693a5f1",
+      "name": "Send a text message",
+      "webhookId": "0577b331-6147-47b2-abee-79332a63fe3f",
+      "executeOnce": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "49autCuwu23S8sEv",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Todos os dias 07:00": {
+      "main": [
+        [
+          {
+            "node": "CoinGecko - BTC ETH SOL",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CoinGecko - Top 20 por Volume",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fear and Greed Index",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS - CoinTelegraph",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS - CoinDesk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS - Decrypt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS - Investing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CoinGecko - BTC ETH SOL": {
+      "main": [
+        []
+      ]
+    },
+    "CoinGecko - Top 20 por Volume": {
+      "main": [
+        []
+      ]
+    },
+    "Fear and Greed Index": {
+      "main": [
+        []
+      ]
+    },
+    "RSS - CoinTelegraph": {
+      "main": [
+        []
+      ]
+    },
+    "RSS - CoinDesk": {
+      "main": [
+        []
+      ]
+    },
+    "RSS - Decrypt": {
+      "main": [
+        []
+      ]
+    },
+    "Agrega Todos os Dados": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq - Analisa e Gera Relatório": {
+      "main": [
+        [
+          {
+            "node": "Formata Mensagem Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata Mensagem Telegram": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS - Investing": {
+      "main": [
+        [
+          {
+            "node": "Agrega Todos os Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Groq - Analisa e Gera Relatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a713eeb3-be93-403e-9508-fedbc71f5dd2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7f200031cb0039f977ca91158031ca631da586fb797ebde4357f96e76f7dc6cf"
+  },
+  "id": "uidbtUWTNv8xBFuH",
+  "tags": []
+}
