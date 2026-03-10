@@ -4,6 +4,12 @@ Automação que coleta notícias e dados de mercado de criptoativos, analisa com
 
 ---
 
+## 📱 Resultado no Telegram
+
+![Relatório no Telegram](https://raw.githubusercontent.com/kaiolamanna01/bot_noticiacrypto/main/imgs/relatorio_telegram.png)
+
+---
+
 ## 🚀 O que o bot faz
 
 - Coleta preços em tempo real de **BTC, ETH e SOL** via CoinGecko
@@ -29,6 +35,10 @@ Cada relatório diário contém:
 ---
 
 ## 🏗️ Arquitetura
+
+### Workflow no n8n
+
+![Workflow n8n](https://raw.githubusercontent.com/kaiolamanna01/bot_noticiacrypto/main/imgs/workflow_n8n.png)
 
 ```
 Trigger (07:00) ──→ CoinGecko BTC/ETH/SOL ──┐
@@ -63,8 +73,8 @@ Trigger (07:00) ──→ CoinGecko BTC/ETH/SOL ──┐
 
 **1. Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/bot_noticiascrypto_telegram.git
-cd bot_noticiascrypto_telegram
+git clone https://github.com/kaiolamanna01/bot_noticiacrypto.git
+cd bot_noticiacrypto
 ```
 
 **2. Configure as variáveis de ambiente**
@@ -114,10 +124,13 @@ http://localhost:5678
 ## 📁 Estrutura do Projeto
 
 ```
-bot_noticiascrypto_telegram/
+bot_noticiacrypto/
 ├── docker-compose.yml      # Configuração dos containers
 ├── env.example             # Modelo de variáveis de ambiente
 ├── noticias_crypto.json    # Workflow do n8n (importar na interface)
+├── imgs/                   # Screenshots do projeto
+│   ├── workflow_n8n.png
+│   └── relatorio_telegram.png
 └── README.md
 ```
 
