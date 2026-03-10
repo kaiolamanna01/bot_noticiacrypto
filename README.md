@@ -82,7 +82,7 @@ cd bot_noticiacrypto
 cp env.example .env
 ```
 
-Edite o `.env` com suas chaves:
+Edite o `.env` com as credenciais do banco e do n8n:
 
 ```env
 POSTGRES_DB=n8n
@@ -91,11 +91,9 @@ POSTGRES_PASSWORD=senha_forte_aqui
 
 N8N_USER=admin
 N8N_PASSWORD=senha_forte_aqui
-
-GROQ_API_KEY=gsk_...
-TELEGRAM_BOT_TOKEN=123456789:ABC-...
-TELEGRAM_CHAT_ID=123456789
 ```
+
+> As chaves de API (Groq e Telegram) são configuradas diretamente na interface do n8n — não precisam estar no `.env`.
 
 **3. Suba os containers**
 ```bash
@@ -112,8 +110,19 @@ http://localhost:5678
 - Selecione o arquivo `noticias_crypto.json`
 
 **6. Configure as credenciais no n8n**
-- Groq: `Credentials` → `Header Auth` → `Authorization: Bearer gsk_...`
-- Telegram: adicione o token diretamente na URL do nó
+
+Acesse **Credentials** no menu lateral e cadastre:
+
+| Credencial | Tipo | Configuração |
+|---|---|---|
+| Groq | Header Auth | Name: `Authorization` / Value: `Bearer gsk_...` |
+| Telegram | — | Token inserido diretamente na URL do nó |
+
+Para obter o Chat ID do Telegram, acesse no navegador:
+```
+https://api.telegram.org/botSEU_TOKEN/getUpdates
+```
+Envie uma mensagem para o bot e copie o campo `chat.id` da resposta.
 
 **7. Ative o workflow e teste**
 - Clique em **Test workflow** para validar
